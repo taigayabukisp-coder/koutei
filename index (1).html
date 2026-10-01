@@ -1,0 +1,886 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>工程管理</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI','Meiryo',system-ui,sans-serif;background:#f5f7fb;color:#172033;min-height:100vh;font-size:15px}
+
+/* ── Sidebar ── */
+.sidebar{position:fixed;inset:0 auto 0 0;width:276px;background:#ffffff;border-right:1px solid #dfe5ee;box-shadow:4px 0 24px rgba(15,23,42,.06);z-index:50;display:flex;flex-direction:column;padding:22px 18px;gap:20px}
+.side-brand{display:flex;align-items:center;gap:11px;color:#172033}
+.side-brand svg{color:#2563eb}
+.side-brand h1{font-size:1.2rem;font-weight:800;letter-spacing:0}
+.side-sub{font-size:.78rem;color:#7b8798;margin-top:3px}
+.side-section{display:flex;flex-direction:column;gap:9px}
+.side-label{font-size:.72rem;font-weight:800;color:#8a97aa;text-transform:uppercase;letter-spacing:.08em}
+.side-actions{margin-top:auto;display:flex;flex-direction:column;gap:8px}
+.side-btn{display:flex;align-items:center;justify-content:center;gap:7px;width:100%;min-height:38px;padding:8px 12px;border:1px solid #dfe5ee;border-radius:8px;background:white;color:#334155;cursor:pointer;font-size:.86rem;font-weight:750;font-family:inherit;transition:all .15s;white-space:nowrap}
+.side-btn:hover{background:#f8fafc;border-color:#c8d2df;color:#172033}
+.side-btn.primary{background:#2563eb;border-color:#2563eb;color:white;box-shadow:0 8px 18px rgba(37,99,235,.18)}
+.side-btn.primary:hover{background:#1d4ed8;border-color:#1d4ed8}
+.side-btn.soft{background:#f7f9fc}
+
+/* ── Nav bar ── */
+.nav-bar{display:none}
+.month-nav{display:grid;grid-template-columns:38px 1fr 38px;align-items:center;background:#f1f5f9;border-radius:10px;overflow:hidden}
+.mnav-btn{height:38px;border:none;background:transparent;cursor:pointer;font-size:1.25rem;color:#475569;line-height:1;transition:all .15s}
+.mnav-btn:hover{background:#e2e8f0;color:#172033}
+.mnav-label{font-size:.95rem;font-weight:800;color:#172033;padding:9px 8px;text-align:center;letter-spacing:0}
+.today-btn{min-height:36px;border:1px solid #bfdbfe;border-radius:8px;background:#eff6ff;color:#2563eb;font-size:.84rem;font-weight:800;cursor:pointer;transition:all .15s;font-family:inherit}
+.today-btn:hover{background:#dbeafe;color:#1d4ed8}
+.view-toggle{display:grid;grid-template-columns:1fr 1fr;align-items:center;background:#f1f5f9;border-radius:9px;padding:3px;gap:2px}
+.view-btn{border:none;background:transparent;color:#64748b;border-radius:7px;padding:8px 10px;font-size:.84rem;font-weight:800;font-family:inherit;cursor:pointer;transition:all .15s}
+.view-btn.active{background:white;color:#1e3a5f;box-shadow:0 1px 4px rgba(15,23,42,.1)}
+.nav-add-btn{display:flex;align-items:center;gap:6px;padding:8px 13px;background:#2563eb;color:white;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:800;font-family:inherit;transition:all .15s;box-shadow:0 2px 7px rgba(37,99,235,.22);white-space:nowrap}
+.nav-add-btn:hover{background:#1d4ed8;transform:translateY(-1px)}
+.nav-spacer{flex:1}
+.tgl-row{display:flex;flex-direction:column;gap:9px}
+.tgl-item{display:flex;align-items:center;justify-content:space-between;gap:10px;cursor:pointer;user-select:none;background:#f8fafc;border:1px solid #e6ecf3;border-radius:8px;padding:9px 10px}
+.tgl-item span{font-size:.86rem;font-weight:700;color:#475569}
+.switch{position:relative;display:inline-block;width:38px;height:22px;flex-shrink:0}
+.switch input{opacity:0;width:0;height:0}
+.slider{position:absolute;cursor:pointer;inset:0;background:#cbd5e1;border-radius:20px;transition:.2s}
+.slider::before{content:'';position:absolute;height:16px;width:16px;left:3px;bottom:3px;background:white;border-radius:50%;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+input:checked+.slider{background:#3b82f6}
+input:checked+.slider::before{transform:translateX(16px)}
+
+/* ── Container ── */
+.container{padding:24px 24px 24px 300px;max-width:none;margin:0;display:flex;flex-direction:column;gap:14px}
+
+/* ── Panel ── */
+.panel{background:white;border:1px solid #dfe5ee;border-radius:10px;box-shadow:0 12px 30px rgba(15,23,42,.06);overflow:hidden}
+.panel-hdr{display:flex;align-items:center;padding:11px 14px;border-bottom:1px solid #f1f5f9;gap:8px}
+.panel-title{font-size:.72rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.07em;flex:1}
+.add-btn{display:flex;align-items:center;gap:5px;padding:5px 11px;background:#3b82f6;color:white;border:none;border-radius:7px;cursor:pointer;font-size:.76rem;font-weight:800;font-family:inherit;transition:all .15s}
+.add-btn:hover{background:#2563eb;transform:translateY(-1px)}
+.collapse-btn{width:28px;height:28px;border:none;background:transparent;cursor:pointer;color:#94a3b8;border-radius:6px;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.collapse-btn:hover{background:#f1f5f9;color:#475569}
+.collapse-btn svg{transition:transform .25s}
+.collapse-btn.open svg{transform:rotate(180deg)}
+.panel-body{padding:10px 14px;max-height:280px;overflow-y:auto}
+.panel-body.collapsed{display:none}
+
+/* ── Task table ── */
+.ti-table{width:100%;border-collapse:collapse}
+.ti-table thead th{font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;padding:2px 6px 8px;text-align:left;white-space:nowrap}
+.ti-table tbody tr{border-left:3px solid transparent}
+.ti-table tbody tr:hover td{background:#f8fafc}
+.ti-table td{padding:2px 3px;vertical-align:middle}
+.ti-color{width:28px;height:28px;padding:2px;border:1.5px solid #e2e8f0;border-radius:6px;cursor:pointer;display:block}
+.ti-in{width:100%;padding:5px 7px;border:1.5px solid transparent;border-radius:6px;font-size:.81rem;font-family:inherit;background:transparent;outline:none;transition:all .15s;color:#1e293b}
+.ti-in:hover{border-color:#cbd5e1;background:white}
+.ti-in:focus{border-color:#3b82f6;background:white;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.ti-del{width:24px;height:24px;border:none;border-radius:5px;background:transparent;color:#cbd5e1;font-size:.95rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.ti-del:hover{background:#fee2e2;color:#ef4444}
+.t-empty{text-align:center;padding:26px 0;color:#cbd5e1}
+.t-empty p{font-size:.82rem;margin-top:8px}
+
+/* ── Gantt chart ── */
+.gantt-scroll{overflow:auto;max-height:calc(100vh - 74px)}
+.g-table{border-collapse:separate;border-spacing:0;width:100%;background:white}
+.g-table th,.g-table td{white-space:nowrap}
+
+/* Gantt header */
+.g-table thead tr:first-child th{position:sticky;top:0;z-index:31}
+.g-table thead tr:nth-child(2) th{position:sticky;top:37px;z-index:30;box-shadow:0 1px 0 #dfe5ee}
+.g-th-task{background:#f8fafc;color:#172033;text-align:left;padding:12px 14px;font-size:.86rem;font-weight:850;position:sticky!important;left:0;top:0!important;z-index:42!important;border-right:1px solid #dfe5ee;border-bottom:1px solid #dfe5ee;min-width:390px;width:390px;box-shadow:1px 0 0 #dfe5ee,0 1px 0 #dfe5ee}
+.g-th-month{background:#f8fafc;color:#334155;font-size:.84rem;font-weight:850;text-align:center;padding:9px 4px;border-right:1px solid #edf2f7;border-bottom:1px solid #dfe5ee}
+.g-th-day{background:#ffffff;min-width:34px;width:34px;padding:0;border-right:1px solid #edf2f7;border-bottom:1px solid #dfe5ee;text-align:center}
+.g-th-day-in{display:flex;flex-direction:column;align-items:center;padding:5px 2px;gap:1px}
+.g-th-day-num{font-size:.86rem;font-weight:850;color:#334155}
+.g-th-day-dow{font-size:.66rem;color:#8a97aa;font-weight:750}
+.g-th-day.sun{background:#fff7f7}
+.g-th-day.sun .g-th-day-num,.g-th-day.sun .g-th-day-dow{color:#d34b4b}
+.g-th-day.sat{background:#f7fbff}
+.g-th-day.sat .g-th-day-num,.g-th-day.sat .g-th-day-dow{color:#2563eb}
+.g-th-day.tod{background:#fff8e6}
+.g-th-day.tod .g-th-day-num,.g-th-day.tod .g-th-day-dow{color:#b7791f}
+
+/* Gantt body */
+.g-td-task{background:#ffffff;position:sticky;left:0;z-index:10;padding:10px 11px;border-right:1px solid #dfe5ee;border-bottom:1px solid #edf2f7;min-width:390px;width:390px;box-shadow:1px 0 0 #edf2f7}
+.tr-odd .g-td-task{background:#fbfcfe}
+.g-task-edit{display:grid;grid-template-columns:32px minmax(136px,1fr) 124px 72px 108px 30px;gap:6px;align-items:center}
+.g-task-edit input{min-width:0;padding:7px 8px;border:1px solid transparent;border-radius:7px;background:transparent;color:#172033;font:inherit;font-size:.88rem;outline:none;transition:all .15s}
+.g-task-edit input:hover{border-color:#d7dee8;background:white}
+.g-task-edit input:focus{border-color:#3b82f6;background:white;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.g-task-edit input[type=color]{width:30px;height:30px;padding:2px;border:1.5px solid #dfe5ee;background:white;cursor:pointer;border-radius:8px}
+.g-task-name{font-weight:800}
+.g-task-days{text-align:right}
+.g-task-del{width:28px;height:28px;border:none;border-radius:7px;background:transparent;color:#cbd5e1;font-size:1.05rem;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.g-task-del:hover{background:#fee2e2;color:#ef4444}
+.g-task-meta{grid-column:2 / -1;font-size:.76rem;color:#8a97aa;padding-left:1px;margin-top:-1px}
+.g-name{font-size:.82rem;font-weight:700;color:#1e293b}
+.g-type{font-size:.68rem;color:#94a3b8;margin-top:2px}
+.g-td-bar{padding:10px 2px;border-right:1px solid #f1f4f8;border-bottom:1px solid #edf2f7;min-width:34px;width:34px;vertical-align:middle;background:#fff}
+.tr-odd .g-td-bar{background:#fbfcfe}
+.g-td-bar.sun{background:#fff8f8}
+.g-td-bar.sat{background:#f8fbff}
+.g-td-bar.tod{background:#fff9ea;box-shadow:inset 0 0 0 1px rgba(245,158,11,.12)}
+.bar{height:18px;border-radius:4px;position:relative;box-shadow:inset 0 -1px 0 rgba(15,23,42,.12)}
+.bar.rs{border-radius:7px 3px 3px 7px}
+.bar.re{border-radius:3px 7px 7px 3px}
+.bar.rb{border-radius:7px}
+.bar.off{opacity:.12;border-radius:4px;box-shadow:none}
+.tod-line{width:2px;height:22px;background:#f59e0b;border-radius:2px;margin:0 auto;box-shadow:0 0 0 2px rgba(245,158,11,.14)}
+.g-empty{text-align:center;padding:50px 20px;color:#cbd5e1}
+.g-empty p{font-size:.9rem;margin-top:12px}
+.g-no-tasks-month{text-align:center;padding:40px;color:#94a3b8;font-size:.85rem}
+
+/* Legend */
+.g-legend{display:flex;gap:14px;flex-wrap:wrap;padding:9px 14px;border-top:1px solid #f1f5f9}
+.lg-item{display:flex;align-items:center;gap:6px;font-size:.8rem;color:#64748b}
+.lg-box{width:12px;height:12px;border-radius:3px;flex-shrink:0}
+
+@media (max-width: 980px){
+  .sidebar{position:static;width:auto;border-right:none;border-bottom:1px solid #dfe5ee;box-shadow:0 8px 24px rgba(15,23,42,.06);padding:16px;display:grid;grid-template-columns:1fr;gap:14px}
+  .side-actions{margin-top:0}
+  .container{padding:16px}
+  .g-th-task,.g-td-task{min-width:360px;width:360px}
+}
+
+/* ── Modals ── */
+.m-overlay{position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:100;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s}
+.m-overlay.open{opacity:1;pointer-events:all}
+.modal{background:white;border-radius:16px;padding:22px;width:360px;max-width:95vw;box-shadow:0 24px 64px rgba(0,0,0,.18);transform:translateY(10px) scale(.98);transition:transform .2s}
+.m-overlay.open .modal{transform:none}
+.modal-lg{width:680px}
+.m-title{font-size:.92rem;font-weight:800;margin-bottom:16px;display:flex;align-items:center;gap:7px;color:#1e293b}
+.m-body{display:flex;flex-direction:column;gap:12px}
+.m-field label{font-size:.68rem;font-weight:800;color:#94a3b8;text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:4px}
+.m-field input{width:100%;padding:8px 10px;border:1.5px solid #e2e8f0;border-radius:8px;font-size:.86rem;font-family:inherit;outline:none;transition:all .15s;color:#1e293b}
+.m-field input:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,.1)}
+.m-footer{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #f1f5f9}
+.m-footer-l{flex:1;display:flex;gap:8px;align-items:center}
+.btn{padding:7px 16px;border:none;border-radius:8px;cursor:pointer;font-size:.82rem;font-weight:700;font-family:inherit;transition:all .15s}
+.btn-p{background:#3b82f6;color:white}
+.btn-p:hover{background:#2563eb}
+.btn-s{background:#f1f5f9;color:#475569}
+.btn-s:hover{background:#e2e8f0}
+.color-presets{display:flex;gap:5px;flex-wrap:wrap}
+.cp{width:21px;height:21px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:transform .15s}
+.cp:hover,.cp.sel{transform:scale(1.2);border-color:#1e293b}
+.note{font-size:.76rem;color:#64748b;background:#f8fafc;border-radius:8px;padding:9px 11px;line-height:1.65;border-left:3px solid #3b82f6}
+.note strong{color:#3b82f6}
+.exp-ta{width:100%;height:300px;font-family:'Consolas',monospace;font-size:.74rem;line-height:1.65;padding:10px;border:1.5px solid #e2e8f0;border-radius:8px;resize:vertical;outline:none;background:#f8fafc;color:#1e293b}
+.exp-ta:focus{border-color:#3b82f6;background:white}
+.file-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 11px;background:#f1f5f9;color:#475569;border-radius:7px;cursor:pointer;font-size:.76rem;font-weight:700;transition:background .15s}
+.file-btn:hover{background:#e2e8f0}
+.cp-ok{font-size:.72rem;color:#10b981;font-weight:800;opacity:0;transition:opacity .3s}
+.cp-ok.show{opacity:1}
+.imp-err{font-size:.72rem;color:#ef4444;font-weight:700}
+
+/* ── Print area (hidden on screen) ── */
+#printArea{display:none}
+
+/* ── Print styles ── */
+@media print{
+  *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
+  body{background:white!important}
+  body>*:not(#printArea){display:none!important}
+  #printArea{display:block!important}
+  .pp{page-break-after:always;padding:0}
+  .pp:last-child{page-break-after:avoid}
+}
+@page{size:A4 landscape;margin:10mm 14mm}
+</style>
+</head>
+<body>
+
+<!-- ════ SIDEBAR ════ -->
+<aside class="sidebar">
+  <div>
+    <div class="side-brand">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/><line x1="7" y1="19" x2="11" y2="19"/></svg>
+      <div>
+        <h1>工程管理</h1>
+        <div class="side-sub">ガントチャート</div>
+      </div>
+    </div>
+  </div>
+
+  <button class="side-btn primary" onclick="addEmptyTask()">
+    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+    タスク追加
+  </button>
+
+  <div class="side-section">
+    <div class="side-label">表示</div>
+    <div class="view-toggle">
+      <button class="view-btn active" id="projectViewBtn" onclick="setViewMode('project')">全体</button>
+      <button class="view-btn" id="monthViewBtn" onclick="setViewMode('month')">月</button>
+    </div>
+    <div class="month-nav">
+      <button class="mnav-btn" onclick="prevMonth()" title="前月">&#8249;</button>
+      <div class="mnav-label" id="monthLabel">―</div>
+      <button class="mnav-btn" onclick="nextMonth()" title="次月">&#8250;</button>
+    </div>
+    <button class="today-btn" onclick="goToToday()">今月へ移動</button>
+  </div>
+
+  <div class="side-section">
+    <div class="side-label">カレンダー</div>
+    <div class="tgl-row">
+      <label class="tgl-item">
+        <span>日曜休工</span>
+        <label class="switch"><input type="checkbox" id="skipSunday" checked><span class="slider"></span></label>
+      </label>
+      <label class="tgl-item">
+        <span>土曜休工</span>
+        <label class="switch"><input type="checkbox" id="skipSaturday"><span class="slider"></span></label>
+      </label>
+    </div>
+  </div>
+
+  <div class="side-actions">
+    <button class="side-btn soft" onclick="printChart()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+      印刷
+    </button>
+    <button class="side-btn" onclick="openImport()">テキスト読み込み</button>
+    <button class="side-btn" onclick="openExport()">テキスト出力</button>
+  </div>
+</aside>
+
+<!-- ════ MAIN ════ -->
+<div class="container">
+
+  <!-- Gantt chart -->
+  <div class="panel">
+    <div class="gantt-scroll">
+      <div id="ganttArea"></div>
+    </div>
+    <div class="g-legend">
+      <div class="lg-item"><div class="lg-box" style="background:#fef2f2;border:1px solid #fecaca"></div>日曜休工</div>
+      <div class="lg-item"><div class="lg-box" style="background:#f0fdf4;border:1px solid #bbf7d0"></div>土曜休工</div>
+      <div class="lg-item"><div class="lg-box" style="background:#fffbeb;border:1px solid #fde68a"></div>今日</div>
+      <div class="lg-item"><div class="lg-box" style="background:#3b82f6;opacity:.85;border-radius:3px"></div>作業日</div>
+      <div class="lg-item"><div class="lg-box" style="background:#3b82f6;opacity:.18"></div>休工日（期間内）</div>
+    </div>
+  </div>
+</div>
+
+<!-- ════ PRINT AREA (populated by JS) ════ -->
+<div id="printArea"></div>
+<datalist id="type-list">
+  <option value="土工">
+  <option value="仮設工">
+  <option value="基礎工">
+  <option value="コンクリート工">
+  <option value="鉄筋工">
+  <option value="型枠工">
+  <option value="舗装工">
+  <option value="塗装工">
+  <option value="防水工">
+  <option value="杭工">
+  <option value="擁壁工">
+  <option value="排水工">
+</datalist>
+
+<!-- ════ EXPORT MODAL ════ -->
+<div class="m-overlay" id="exportModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal modal-lg">
+    <div class="m-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      テキスト出力
+    </div>
+    <div class="m-body">
+      <div class="note">このテキストをLLM（Claude・ChatGPT等）に貼り付けて修正を依頼し、返答を「テキスト読み込み」で読み込めば工程を更新できます。<br><strong>編集可能:</strong> タスク名・開始日・作業日数・工種・色・設定</div>
+      <textarea class="exp-ta" id="exportText" readonly></textarea>
+    </div>
+    <div class="m-footer">
+      <div class="m-footer-l">
+        <span class="file-btn" onclick="copyExport()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>コピー
+        </span>
+        <span class="cp-ok" id="copyOk">✓ コピーしました</span>
+        <span class="file-btn" onclick="downloadExport()">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>.txt保存
+        </span>
+      </div>
+      <button class="btn btn-s" onclick="document.getElementById('exportModal').classList.remove('open')">閉じる</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ IMPORT MODAL ════ -->
+<div class="m-overlay" id="importModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal modal-lg">
+    <div class="m-title">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+      テキスト読み込み
+    </div>
+    <div class="m-body">
+      <div class="note">LLMが出力したテキストを貼り付けるか、保存した .txt ファイルを開いてください。<br><strong>「## タスク一覧」</strong> テーブルと <strong>「## 設定」</strong> を読み取って反映します。</div>
+      <textarea class="exp-ta" id="importText" placeholder="ここにテキストを貼り付け…"></textarea>
+      <div style="display:flex;align-items:center;gap:10px">
+        <label class="file-btn">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>.txtファイルを開く
+          <input type="file" accept=".txt" style="display:none" onchange="loadImportFile(event)">
+        </label>
+        <span class="imp-err" id="importErr"></span>
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn btn-s" onclick="document.getElementById('importModal').classList.remove('open')">キャンセル</button>
+      <button class="btn btn-p" onclick="applyImport()">読み込んで反映</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════ EDIT MODAL ════ -->
+<div class="m-overlay" id="editModal" onclick="if(event.target===this)this.classList.remove('open')">
+  <div class="modal">
+    <div class="m-title">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2.5" stroke-linecap="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+      タスクを編集
+    </div>
+    <div class="m-body">
+      <input type="hidden" id="editId">
+      <div class="m-field"><label>タスク名</label><input type="text" id="editName" maxlength="30"></div>
+      <div class="m-field"><label>開始日</label><input type="date" id="editStart"></div>
+      <div class="m-field"><label>作業日数</label><input type="number" id="editDays" min="1" max="365"></div>
+      <div class="m-field"><label>工種</label><input type="text" id="editType" list="edit-type-list" placeholder="例：コンクリート工"><datalist id="edit-type-list"><option value="土工"><option value="仮設工"><option value="基礎工"><option value="コンクリート工"><option value="鉄筋工"><option value="型枠工"><option value="舗装工"><option value="塗装工"><option value="防水工"><option value="杭工"></datalist></div>
+      <div class="m-field">
+        <label>色</label>
+        <div style="display:flex;align-items:center;gap:8px;margin-top:2px">
+          <input type="color" id="editColor" style="width:38px;height:34px;border:1.5px solid #e2e8f0;border-radius:7px;cursor:pointer;padding:2px" oninput="syncCP(this.value)">
+          <div class="color-presets" id="colorPresets"></div>
+        </div>
+      </div>
+    </div>
+    <div class="m-footer">
+      <button class="btn btn-s" onclick="document.getElementById('editModal').classList.remove('open')">キャンセル</button>
+      <button class="btn btn-p" onclick="saveEdit()">保存</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// CONFIG & STATE
+// ═══════════════════════════════════════════
+const COLORS = ['#3b82f6','#10b981','#f59e0b','#ef4444','#8b5cf6','#f97316','#06b6d4','#ec4899'];
+const DOW_JA = ['日','月','火','水','木','金','土'];
+const TYPE_LIST = ['土工','仮設工','基礎工','コンクリート工','鉄筋工','型枠工','舗装工','塗装工','防水工','杭工','擁壁工','排水工'];
+
+let tasks = [];
+let colorIndex = 0;
+let viewYear, viewMonth; // current month view (0-indexed month)
+let viewMode = 'project';
+
+const today = new Date(); today.setHours(0,0,0,0);
+
+// ═══════════════════════════════════════════
+// DATE UTILITIES
+// ═══════════════════════════════════════════
+const fmt = d => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+function parseDate(s){const[y,m,d]=s.split('-').map(Number);const r=new Date(y,m-1,d);r.setHours(0,0,0,0);return r}
+const addDays = (d,n) => {const r=new Date(d);r.setDate(r.getDate()+n);return r};
+const daysDiff = (a,b) => Math.round((b-a)/86400000);
+const daysInMonth = (y,m) => new Date(y,m+1,0).getDate();
+const esc = s => s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const escAttr = s => esc(String(s)).replace(/"/g,'&quot;');
+function hasSchedule(t){return /^\d{4}-\d{2}-\d{2}$/.test(t.startStr||'')&&Number(t.workDays)>0}
+
+function calcEndDate(startDate, workDays, skipSun, skipSat){
+  let count=0, cur=new Date(startDate);
+  while(count<workDays){
+    const dow=cur.getDay();
+    if(!((dow===0&&skipSun)||(dow===6&&skipSat)))count++;
+    if(count<workDays)cur=addDays(cur,1);
+  }
+  return cur;
+}
+function isWorkDay(date, ts, te, skipSun, skipSat){
+  if(date<ts||date>te)return false;
+  const dow=date.getDay();
+  return !((dow===0&&skipSun)||(dow===6&&skipSat));
+}
+function getProjectRange(skipSun, skipSat){
+  const scheduled=tasks.filter(hasSchedule);
+  if(!scheduled.length){
+    return {
+      start:new Date(viewYear,viewMonth,1),
+      end:new Date(viewYear,viewMonth,daysInMonth(viewYear,viewMonth)),
+      hasScheduled:false
+    };
+  }
+  let start=parseDate(scheduled[0].startStr);
+  let end=calcEndDate(start,scheduled[0].workDays,skipSun,skipSat);
+  scheduled.forEach(t=>{
+    const ts=parseDate(t.startStr);
+    const te=calcEndDate(ts,t.workDays,skipSun,skipSat);
+    if(ts<start)start=ts;
+    if(te>end)end=te;
+  });
+  start=new Date(start.getFullYear(),start.getMonth(),1);
+  end=new Date(end.getFullYear(),end.getMonth(),daysInMonth(end.getFullYear(),end.getMonth()));
+  end.setHours(23,59,59,999);
+  return {start,end,hasScheduled:true};
+}
+
+// ═══════════════════════════════════════════
+// TASK MANAGEMENT
+// ═══════════════════════════════════════════
+function addTaskData(name, startStr, workDays, color, type=''){
+  tasks.push({id:Date.now()+Math.random(), name, startStr, workDays, color, type});
+}
+function addEmptyTask(){
+  colorIndex++;
+  const id=Date.now()+Math.random();
+  tasks.push({id, name:'', startStr:'', workDays:'', color:COLORS[colorIndex%COLORS.length], type:TYPE_LIST[(colorIndex-1)%TYPE_LIST.length]});
+  renderGantt();
+  setTimeout(()=>{
+    document.getElementById('task-name-'+id)?.focus();
+  },30);
+}
+function removeTask(id){tasks=tasks.filter(t=>t.id!==id);renderGantt()}
+function updateTask(id, field, value){
+  const t=tasks.find(t=>t.id===id); if(!t)return;
+  if(field==='workDays')value=value===''?'':Math.max(1,parseInt(value)||1);
+  t[field]=value; renderGantt();
+}
+function updateTaskColor(id, color){
+  const t=tasks.find(t=>t.id===id); if(!t)return;
+  t.color=color;
+  renderGantt();
+}
+
+// ═══════════════════════════════════════════
+// MONTH NAVIGATION
+// ═══════════════════════════════════════════
+function prevMonth(){viewMode='month';viewMonth--;if(viewMonth<0){viewMonth=11;viewYear--}updateMonthLabel();renderGantt()}
+function nextMonth(){viewMode='month';viewMonth++;if(viewMonth>11){viewMonth=0;viewYear++}updateMonthLabel();renderGantt()}
+function goToToday(){viewMode='month';viewYear=today.getFullYear();viewMonth=today.getMonth();updateMonthLabel();renderGantt()}
+function setViewMode(mode){viewMode=mode;updateMonthLabel();renderGantt()}
+function updateMonthLabel(){
+  const label=document.getElementById('monthLabel');
+  label.textContent=viewMode==='project'?'工程全体':`${viewYear}年${viewMonth+1}月`;
+  document.getElementById('projectViewBtn')?.classList.toggle('active',viewMode==='project');
+  document.getElementById('monthViewBtn')?.classList.toggle('active',viewMode==='month');
+}
+
+// ═══════════════════════════════════════════
+// GANTT (MONTH VIEW)
+// ═══════════════════════════════════════════
+function renderAll(){renderGantt()}
+
+function renderGantt(){
+  const skipSun=document.getElementById('skipSunday').checked;
+  const skipSat=document.getElementById('skipSaturday').checked;
+  const el=document.getElementById('ganttArea');
+
+  if(!tasks.length){
+    el.innerHTML=`<div class="g-empty"><svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="#e2e8f0" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="7" y1="15" x2="13" y2="15"/><line x1="7" y1="19" x2="11" y2="19"/></svg><p>タスクを追加するとガントチャートが表示されます</p></div>`;
+    return;
+  }
+
+  let monthStart, monthEnd;
+  if(viewMode==='project'){
+    const range=getProjectRange(skipSun,skipSat);
+    monthStart=range.start;
+    monthEnd=range.end;
+  }else{
+    const dim=daysInMonth(viewYear,viewMonth);
+    monthStart=new Date(viewYear,viewMonth,1);
+    monthEnd=new Date(viewYear,viewMonth,dim);
+    monthEnd.setHours(23,59,59,999);
+  }
+
+  // build dates array
+  const dates=[];
+  for(let cur=new Date(monthStart);cur<=monthEnd;cur=addDays(cur,1)) dates.push(new Date(cur));
+
+  // filter tasks overlapping this month
+  const visible=tasks.filter(t=>{
+    if(!hasSchedule(t))return true;
+    if(viewMode==='project')return true;
+    const ts=parseDate(t.startStr);
+    const te=calcEndDate(ts,t.workDays,skipSun,skipSat);
+    return ts<=monthEnd&&te>=monthStart;
+  });
+
+  if(!visible.length){
+    el.innerHTML=`<div class="g-no-tasks-month">この月にはタスクがありません<br><small style="color:#cbd5e1">← 前月 / 次月 → で移動できます</small></div>`;
+    return;
+  }
+
+  el.innerHTML=buildGanttHTML(dates, visible, skipSun, skipSat, monthStart, monthEnd, false);
+}
+
+function buildGanttHTML(dates, taskList, skipSun, skipSat, monthStart, monthEnd, forPrint){
+  let h='<table class="g-table"><thead>';
+  // month header row
+  h+=`<tr><th class="g-th-task" rowspan="2">${forPrint?'タスク名 / 工種':'タスク名'}</th>`;
+  // group dates by month for header
+  const groups=[];
+  dates.forEach(d=>{
+    const key=`${d.getFullYear()}-${d.getMonth()}`;
+    if(!groups.length||groups[groups.length-1].key!==key)
+      groups.push({key,label:`${d.getFullYear()}年${d.getMonth()+1}月`,count:0});
+    groups[groups.length-1].count++;
+  });
+  groups.forEach(g=>h+=`<th class="g-th-month" colspan="${g.count}">${g.label}</th>`);
+  h+='</tr>';
+
+  // day header row
+  h+='<tr>';
+  dates.forEach(d=>{
+    const dow=d.getDay();
+    const isT=daysDiff(d,today)===0;
+    let cls=isT?'tod':dow===0?'sun':dow===6?'sat':'';
+    h+=`<th class="g-th-day ${cls}"><div class="g-th-day-in"><div class="g-th-day-num">${d.getDate()}</div><div class="g-th-day-dow">${DOW_JA[dow]}</div></div></th>`;
+  });
+  h+='</tr></thead><tbody>';
+
+  // task rows
+  taskList.forEach((t,ri)=>{
+    const scheduled=hasSchedule(t);
+    const ts=scheduled?parseDate(t.startStr):null;
+    const te=scheduled?calcEndDate(ts,t.workDays,skipSun,skipSat):null;
+    const endStr=scheduled?fmt(te):'';
+    const meta=scheduled?`${t.startStr} 〜 ${endStr}（${t.workDays}日）`:'日程未設定';
+    const trCls=ri%2===1?'tr-odd':'';
+
+    h+=`<tr class="${trCls}"><td class="g-td-task">
+      <div class="g-task-edit">
+        <input type="color" value="${escAttr(t.color)}" title="色" oninput="updateTaskColor(${t.id},this.value)">
+        <input id="task-name-${t.id}" class="g-task-name" type="text" value="${escAttr(t.name)}" placeholder="タスク名" maxlength="30" onchange="updateTask(${t.id},'name',this.value)">
+        <input type="date" value="${escAttr(t.startStr)}" onchange="updateTask(${t.id},'startStr',this.value)">
+        <input class="g-task-days" type="number" value="${escAttr(t.workDays||'')}" min="1" max="365" title="作業日数" placeholder="日数" onchange="updateTask(${t.id},'workDays',this.value)">
+        <input type="text" value="${escAttr(t.type||'')}" placeholder="工種" list="type-list" onchange="updateTask(${t.id},'type',this.value)">
+        <button class="g-task-del" onclick="removeTask(${t.id})" title="削除">×</button>
+        <div class="g-task-meta">${meta}</div>
+      </div>
+    </td>`;
+
+    dates.forEach(d=>{
+      const dow=d.getDay();
+      const isT=daysDiff(d,today)===0;
+      const isSun=dow===0, isSat=dow===6;
+      let tdCls=isSun?'sun':isSat?'sat':'';
+      if(isT)tdCls+=' tod';
+
+      const inRange=scheduled&&d>=ts&&d<=te;
+      const isWork=scheduled&&isWorkDay(d,ts,te,skipSun,skipSat);
+
+      h+=`<td class="g-td-bar ${tdCls}">`;
+      if(isT){
+        h+=`<div style="position:relative;height:18px">`;
+        if(isWork){
+          const bc=getBarCls(d,ts,te,skipSun,skipSat,monthStart,monthEnd);
+          h+=`<div class="bar ${bc}" style="background:${t.color};opacity:.85;position:absolute;inset:0"></div>`;
+        }else if(inRange){
+          h+=`<div class="bar off" style="background:${t.color};position:absolute;inset:0"></div>`;
+        }
+        h+=`<div class="tod-line" style="position:absolute;top:0;left:50%;transform:translateX(-50%)"></div></div>`;
+      }else if(isWork){
+        const bc=getBarCls(d,ts,te,skipSun,skipSat,monthStart,monthEnd);
+        h+=`<div class="bar ${bc}" style="background:${t.color};opacity:.85"></div>`;
+      }else if(inRange){
+        h+=`<div class="bar off" style="background:${t.color}"></div>`;
+      }
+      h+='</td>';
+    });
+    h+='</tr>';
+  });
+
+  h+='</tbody></table>';
+  return h;
+}
+
+function getBarCls(d, ts, te, skipSun, skipSat, monthStart, monthEnd){
+  const prev=addDays(d,-1);
+  const hasPrev=prev>=monthStart&&isWorkDay(prev,ts,te,skipSun,skipSat);
+  const next=addDays(d,1);
+  const hasNext=next<=monthEnd&&isWorkDay(next,ts,te,skipSun,skipSat);
+  if(!hasPrev&&!hasNext)return'rb';
+  if(!hasPrev)return'rs';
+  if(!hasNext)return're';
+  return'';
+}
+
+// ═══════════════════════════════════════════
+// PRINT (A4 landscape, 1 month / page)
+// ═══════════════════════════════════════════
+function printChart(){
+  if(!tasks.length){alert('タスクがありません');return}
+  const skipSun=document.getElementById('skipSunday').checked;
+  const skipSat=document.getElementById('skipSaturday').checked;
+  const months=getTaskMonths(skipSun,skipSat);
+
+  const printArea=document.getElementById('printArea');
+  printArea.innerHTML=months.map(({year,month})=>generatePrintPage(year,month,skipSun,skipSat)).join('');
+  window.print();
+  setTimeout(()=>{printArea.innerHTML=''},1500);
+}
+
+function getTaskMonths(skipSun,skipSat){
+  const set=new Set();
+  tasks.forEach(t=>{
+    if(!hasSchedule(t))return;
+    const ts=parseDate(t.startStr);
+    const te=calcEndDate(ts,t.workDays,skipSun,skipSat);
+    let cur=new Date(ts.getFullYear(),ts.getMonth(),1);
+    const end=new Date(te.getFullYear(),te.getMonth(),1);
+    while(cur<=end){
+      set.add(`${cur.getFullYear()}-${cur.getMonth()}`);
+      cur=new Date(cur.getFullYear(),cur.getMonth()+1,1);
+    }
+  });
+  if(!set.size)set.add(`${viewYear}-${viewMonth}`);
+  return Array.from(set).sort().map(s=>{const[y,m]=s.split('-').map(Number);return{year:y,month:m}});
+}
+
+function generatePrintPage(year, month, skipSun, skipSat){
+  const dim=daysInMonth(year,month);
+  const monthStart=new Date(year,month,1);
+  const monthEnd=new Date(year,month,dim); monthEnd.setHours(23,59,59,999);
+
+  const dates=[];
+  for(let d=1;d<=dim;d++) dates.push(new Date(year,month,d));
+
+  // 全タスクを表示（当月に予定がないものも空欄で出力）
+  const visible=tasks;
+
+  // Inline-styled print table
+  const nmW=50, tyW=24;
+  const dayW=Math.max(5.5, (267-nmW-tyW)/dim).toFixed(1);
+  const fs='7.5pt', fsS='6pt';
+  const cellBorder='1px solid #ccc';
+  const hdrBg='#1e3a5f', hdrTxt='white';
+  const sunBg='#fef2f2', satBg='#f0fdf4', todBg='#fffbeb';
+
+  let tbl=`<table style="border-collapse:collapse;width:100%;table-layout:fixed;font-family:'Meiryo',sans-serif;font-size:${fs}">`;
+  // header row
+  tbl+=`<thead><tr>`;
+  tbl+=`<th style="background:${hdrBg};color:${hdrTxt};text-align:left;padding:3px 5px;width:${nmW}mm;border:${cellBorder};font-size:${fsS}">タスク名</th>`;
+  tbl+=`<th style="background:${hdrBg};color:${hdrTxt};text-align:left;padding:3px 4px;width:${tyW}mm;border:${cellBorder};font-size:${fsS}">工種</th>`;
+  dates.forEach(d=>{
+    const dow=d.getDay();
+    const isT=daysDiff(d,today)===0;
+    const bg=isT?'#92400e':dow===0?'#7f1d1d':dow===6?'#164e4e':hdrBg;
+    tbl+=`<th style="background:${bg};color:${hdrTxt};width:${dayW}mm;border:${cellBorder};padding:1px 0;text-align:center">`;
+    tbl+=`<div style="font-size:7pt;font-weight:800">${d.getDate()}</div>`;
+    tbl+=`<div style="font-size:5.5pt;opacity:.75">${DOW_JA[dow]}</div></th>`;
+  });
+  tbl+='</tr></thead><tbody>';
+
+  visible.forEach((t,ri)=>{
+    const scheduled=hasSchedule(t);
+    const ts=scheduled?parseDate(t.startStr):null;
+    const te=scheduled?calcEndDate(ts,t.workDays,skipSun,skipSat):null;
+    const rowBg=ri%2===0?'white':'#f8fafc';
+    tbl+=`<tr>`;
+    tbl+=`<td style="padding:3px 5px;border:${cellBorder};background:${rowBg};border-left:3px solid ${t.color};font-weight:700;font-size:${fs}">${esc(t.name)||'（無題）'}</td>`;
+    tbl+=`<td style="padding:3px 4px;border:${cellBorder};background:${rowBg};font-size:${fsS};color:#555">${esc(t.type||'')}</td>`;
+    dates.forEach(d=>{
+      const dow=d.getDay();
+      const isT=daysDiff(d,today)===0;
+      const isSun=dow===0, isSat=dow===6;
+      const cellBg=isT?todBg:isSun?sunBg:isSat?satBg:rowBg;
+      const inRange=scheduled&&d>=ts&&d<=te;
+      const isWork=scheduled&&isWorkDay(d,ts,te,skipSun,skipSat);
+
+      tbl+=`<td style="border:${cellBorder};background:${cellBg};padding:2px 1px;vertical-align:middle;text-align:center">`;
+      if(isWork){
+        const bc=getBarCls(d,ts,te,skipSun,skipSat,monthStart,monthEnd);
+        const rx=bc==='rb'?'3px':bc==='rs'?'3px 0 0 3px':bc==='re'?'0 3px 3px 0':'0';
+        tbl+=`<div style="height:11px;background:${t.color};opacity:.87;border-radius:${rx}"></div>`;
+      }else if(inRange){
+        tbl+=`<div style="height:11px;background:${t.color};opacity:.18"></div>`;
+      }
+      if(isT&&!isWork&&!inRange){
+        tbl+=`<div style="width:1.5px;height:11px;background:#f59e0b;margin:0 auto;border-radius:1px"></div>`;
+      }
+      tbl+='</td>';
+    });
+    tbl+='</tr>';
+  });
+  tbl+='</tbody></table>';
+
+  const printDate=fmt(new Date());
+  return `<div class="pp">
+    <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:4mm;border-bottom:2px solid #1e3a5f;padding-bottom:2mm">
+      <span style="font-size:12pt;font-weight:800;color:#1e3a5f;font-family:'Meiryo',sans-serif">${year}年${month+1}月　工程表</span>
+      <span style="font-size:7.5pt;color:#888;font-family:'Meiryo',sans-serif;margin-left:auto">出力日：${printDate}　${skipSun?'日曜休工':''} ${skipSat?'土曜休工':''}</span>
+    </div>
+    ${tbl}
+  </div>`;
+}
+
+// ═══════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════
+function openExport(){
+  if(!tasks.length){alert('タスクがありません');return}
+  document.getElementById('exportText').value=generateExportText();
+  document.getElementById('exportModal').classList.add('open');
+}
+function generateExportText(){
+  const skipSun=document.getElementById('skipSunday').checked;
+  const skipSat=document.getElementById('skipSaturday').checked;
+  const rows=tasks.map(t=>{
+    if(!hasSchedule(t))return{...t,workDays:t.workDays||'',endStr:''};
+    const ts=parseDate(t.startStr);
+    return{...t,endStr:fmt(calcEndDate(ts,t.workDays,skipSun,skipSat))};
+  });
+  const scheduledRows=rows.filter(hasSchedule);
+  const allS=scheduledRows.map(r=>r.startStr).sort(), allE=scheduledRows.map(r=>r.endStr).sort();
+  const pS=allS[0]||'', pE=allE[allE.length-1]||'';
+  const calDays=pS&&pE?daysDiff(parseDate(pS),parseDate(pE))+1:0;
+  const totalWork=scheduledRows.reduce((s,t)=>s+Number(t.workDays),0);
+  const overlaps=[];
+  for(let i=0;i<scheduledRows.length;i++)for(let j=i+1;j<scheduledRows.length;j++){
+    if(parseDate(scheduledRows[i].startStr)<=parseDate(scheduledRows[j].endStr)&&parseDate(scheduledRows[j].startStr)<=parseDate(scheduledRows[i].endStr))
+      overlaps.push(`${scheduledRows[i].name||scheduledRows[i].type||'未題'} ↔ ${scheduledRows[j].name||scheduledRows[j].type||'未題'}`);
+  }
+  const barStart=pS?parseDate(pS):null, barEnd=pE?parseDate(pE):null;
+  const span=barStart&&barEnd?daysDiff(barStart,barEnd)+1:0, scale=Math.max(1,Math.ceil((span||1)/50));
+  const nw=Math.max(10,...rows.map(r=>[...r.name].length))+2;
+  let dh=''.padEnd(nw);
+  if(barStart&&barEnd){
+    let cur=new Date(barStart);
+    while(cur<=barEnd){dh+=`${cur.getMonth()+1}/${cur.getDate()}`.padEnd(scale);cur=addDays(cur,scale)}
+  }
+  const ascii=scheduledRows.map(r=>{
+    const ts=parseDate(r.startStr), te=parseDate(r.endStr);
+    let line=(r.name||r.type||'未題').padEnd(nw);
+    let c=new Date(barStart);
+    while(c<=barEnd){
+      const inR=c>=ts&&c<=te;
+      const dow=c.getDay(), isOff=(dow===0&&skipSun)||(dow===6&&skipSat);
+      line+=(inR?(isOff?'░':'█'):'　').repeat(scale);
+      c=addDays(c,scale);
+    }
+    return line.trimEnd();
+  });
+  const cw=[4,Math.max(8,...rows.map(r=>[...r.name].length)),10,6,10,8,Math.max(4,...rows.map(r=>[...(r.type||'')].length))];
+  const pad=(s,w)=>String(s).padEnd(w);
+  const th=`| ${pad('No.',cw[0])} | ${pad('タスク名',cw[1])} | ${pad('開始日',cw[2])} | ${pad('作業日数',cw[3])} | ${pad('終了日',cw[4])} | ${pad('色',cw[5])} | ${pad('工種',cw[6])} |`;
+  const ts=`|${'-'.repeat(cw[0]+2)}|${'-'.repeat(cw[1]+2)}|${'-'.repeat(cw[2]+2)}|${'-'.repeat(cw[3]+2)}|${'-'.repeat(cw[4]+2)}|${'-'.repeat(cw[5]+2)}|${'-'.repeat(cw[6]+2)}|`;
+  const tr=rows.map((r,i)=>`| ${pad(i+1,cw[0])} | ${pad(r.name,cw[1])} | ${pad(r.startStr,cw[2])} | ${pad(r.workDays,cw[3])} | ${pad(r.endStr,cw[4])} | ${pad(r.color,cw[5])} | ${pad(r.type||'',cw[6])} |`);
+  const asciiBlock=scheduledRows.length?[`（█=作業日 ░=休工日（期間内） ※${scale}日=1マス）`,dh,...ascii]:[`日程が設定されたタスクがありません`];
+  return[`# ガントチャート工程表`,`出力日時: ${fmt(new Date())}`,``,`## 設定`,`日曜休工: ${skipSun?'ON':'OFF'}`,`土曜休工: ${skipSat?'ON':'OFF'}`,``,`## タスク一覧`,th,ts,...tr,``,`## 工程概要`,`工期開始: ${pS||'未設定'}`,`工期終了: ${pE||'未設定'}`,`カレンダー日数: ${calDays}日`,`総作業日数: ${totalWork}日`,`並行工程: ${overlaps.length?overlaps.join(', '):'なし'}`,``,`## ASCII工程表`,...asciiBlock].join('\n');
+}
+function copyExport(){
+  navigator.clipboard.writeText(document.getElementById('exportText').value).then(()=>{
+    const el=document.getElementById('copyOk'); el.classList.add('show'); setTimeout(()=>el.classList.remove('show'),2000);
+  });
+}
+function downloadExport(){
+  const b=new Blob([document.getElementById('exportText').value],{type:'text/plain;charset=utf-8'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`工程表_${fmt(new Date())}.txt`; a.click(); URL.revokeObjectURL(a.href);
+}
+
+// ═══════════════════════════════════════════
+// IMPORT
+// ═══════════════════════════════════════════
+function openImport(){
+  document.getElementById('importText').value=''; document.getElementById('importErr').textContent='';
+  document.getElementById('importModal').classList.add('open');
+  setTimeout(()=>document.getElementById('importText').focus(),80);
+}
+function loadImportFile(e){
+  const f=e.target.files[0]; if(!f)return;
+  const r=new FileReader(); r.onload=ev=>{document.getElementById('importText').value=ev.target.result}; r.readAsText(f,'utf-8'); e.target.value='';
+}
+function applyImport(){
+  const text=document.getElementById('importText').value;
+  const errEl=document.getElementById('importErr'); errEl.textContent='';
+  try{
+    const res=parseImportText(text);
+    if(!res.tasks.length){errEl.textContent='⚠ タスクが見つかりませんでした';return}
+    if(res.settings.skipSunday!==null) document.getElementById('skipSunday').checked=res.settings.skipSunday;
+    if(res.settings.skipSaturday!==null) document.getElementById('skipSaturday').checked=res.settings.skipSaturday;
+    tasks=res.tasks; colorIndex=tasks.length;
+    document.getElementById('importModal').classList.remove('open');
+    renderAll();
+  }catch(e){errEl.textContent='⚠ 読み込みに失敗しました: '+e.message}
+}
+function parseImportText(text){
+  const lines=text.split('\n');
+  const settings={skipSunday:null,skipSaturday:null};
+  const parsed=[];
+  let inSets=false, inTbl=false, hdrDone=false;
+  for(const raw of lines){
+    const line=raw.trim();
+    if(line==='## 設定'){inSets=true;inTbl=false;continue}
+    if(line==='## タスク一覧'){inSets=false;inTbl=true;hdrDone=false;continue}
+    if(line.startsWith('## ')&&line!=='## 設定'&&line!=='## タスク一覧'){inSets=false;inTbl=false;continue}
+    if(inSets){
+      if(/^日曜休工\s*:\s*(ON|OFF)/i.test(line)) settings.skipSunday=/ON/i.test(line);
+      if(/^土曜休工\s*:\s*(ON|OFF)/i.test(line)) settings.skipSaturday=/ON/i.test(line);
+    }
+    if(inTbl){
+      if(!line.startsWith('|'))continue;
+      if(/^\|[-| ]+\|$/.test(line))continue;
+      if(/No\./.test(line)){hdrDone=true;continue}
+      if(!hdrDone)continue;
+      const cols=line.split('|').map(s=>s.trim()).filter((_,i,a)=>i>0&&i<a.length-1);
+      if(cols.length<4)continue;
+      const name=cols[1], startStr=cols[2], workDays=parseInt(cols[3]);
+      const color=cols[5]&&/^#[0-9a-fA-F]{6}$/.test(cols[5])?cols[5]:COLORS[parsed.length%COLORS.length];
+      const type=cols[6]||'';
+      const scheduled=/^\d{4}-\d{2}-\d{2}$/.test(startStr)&&!isNaN(workDays)&&workDays>=1;
+      if(!name&&!type)continue;
+      parsed.push({id:Date.now()+Math.random(),name,startStr:scheduled?startStr:'',workDays:scheduled?workDays:'',color,type});
+    }
+  }
+  return{settings,tasks:parsed};
+}
+
+// ═══════════════════════════════════════════
+// EDIT MODAL
+// ═══════════════════════════════════════════
+function buildColorPresets(){
+  document.getElementById('colorPresets').innerHTML=COLORS.map(c=>`<div class="cp" data-c="${c}" style="background:${c}" onclick="syncCP('${c}')"></div>`).join('');
+}
+function syncCP(val){
+  document.getElementById('editColor').value=val;
+  document.querySelectorAll('.cp').forEach(el=>el.classList.toggle('sel',el.dataset.c===val));
+}
+function saveEdit(){
+  const id=parseFloat(document.getElementById('editId').value);
+  const name=document.getElementById('editName').value.trim();
+  const startStr=document.getElementById('editStart').value;
+  const workDays=parseInt(document.getElementById('editDays').value);
+  const color=document.getElementById('editColor').value;
+  const type=document.getElementById('editType').value.trim();
+  if(!name||!startStr||workDays<1)return;
+  const t=tasks.find(t=>t.id===id);
+  if(t){t.name=name;t.startStr=startStr;t.workDays=workDays;t.color=color;t.type=type}
+  document.getElementById('editModal').classList.remove('open');
+  renderAll();
+}
+
+// ═══════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════
+(function init(){
+  viewYear=today.getFullYear(); viewMonth=today.getMonth();
+  updateMonthLabel();
+  buildColorPresets();
+
+  // Sample tasks
+  addTaskData('準備工',   fmt(today),              3,  '#3b82f6','仮設工');
+  addTaskData('基礎工事', fmt(addDays(today,3)),   7,  '#10b981','コンクリート工');
+  addTaskData('上部工',   fmt(addDays(today,10)), 10,  '#f59e0b','鉄筋工');
+  renderAll();
+})();
+
+// ── Event listeners ──
+document.getElementById('skipSunday').addEventListener('change', renderGantt);
+document.getElementById('skipSaturday').addEventListener('change', renderGantt);
+document.addEventListener('keydown', e=>{
+  if(e.key==='Escape'){
+    ['exportModal','importModal','editModal'].forEach(id=>document.getElementById(id).classList.remove('open'));
+  }
+  if(e.key==='Enter'&&document.getElementById('editModal').classList.contains('open')) saveEdit();
+});
+</script>
+</body>
+</html>
